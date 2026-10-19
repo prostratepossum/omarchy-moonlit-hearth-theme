@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.prostratepossum.moonlit-hearth-intro",
+  "name": "Moonlit Hearth Intro",
+  "version": "1.0.0",
+  "author": "prostratepossum",
+  "description": "One-shot Moonlit Hearth login intro: the snowy scene fades in, snow gathers into the moon-and-cabin badge, then an iris opens onto the desktop.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Intro.qml"
+  },
+  "homepage": "https://github.com/prostratepossum/omarchy-moonlit-hearth-theme"
+}

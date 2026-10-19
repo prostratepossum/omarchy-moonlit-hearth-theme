@@ -1,0 +1,36 @@
+# Moonlit Hearth lazygit colors
+gui:
+  nerdFontsVersion: "3"
+  border: rounded
+  theme:
+    activeBorderColor:
+      - "#8fbbe0"   # moonlight: focused panel
+      - bold
+    inactiveBorderColor:
+      - "#1f3a5c"
+    searchingActiveBorderColor:
+      - "#a99ad8"
+      - bold
+    optionsTextColor:
+      - "#f0c47a"
+    selectedLineBgColor:
+      - "#1a2c45"
+    inactiveViewSelectedLineBgColor:
+      - "#14243a"
+    cherryPickedCommitFgColor:
+      - "#0a1424"
+    cherryPickedCommitBgColor:
+      - "#a99ad8"
+    markedBaseCommitFgColor:
+      - "#0a1424"
+    markedBaseCommitBgColor:
+      - "#f0c47a"
+    unstagedChangesColor:
+      - "#d27a6a"
+    defaultFgColor:
+      - "#d4e3f0"
+  authorColors:
+    "*": "#f0c47a"
+  branchColorPatterns:
+    "^main$": "#8fb9a8"
+    "^master$": "#8fb9a8"

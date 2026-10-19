@@ -1,0 +1,93 @@
+# Moonlit Hearth prompt — matches the Moonlit Hearth theme.
+#   ╭─ ~/code/repo   main ?1                       took 3s  ☾ 22:14
+#   ╰─☾
+# Snow pill for the path, night pill with hearth-amber git info, and a ☾ that
+# turns ember when the last command failed. The moon sits by the clock.
+
+add_newline = true
+command_timeout = 200
+palette = "hearth"
+
+format = """
+[╭─](frost)\
+[](snow)$directory[](fg:snow bg:night)\
+$git_branch$git_status[](night) \
+$python$nodejs$rust\
+$fill\
+$cmd_duration$time
+[╰─](frost)$character"""
+
+[palettes.hearth]
+black = "#0a1424"
+night = "#1a2c45"
+snow = "#d4e3f0"
+moon = "#8fbbe0"
+amber = "#f0c47a"
+pine = "#8fb9a8"
+ember = "#d27a6a"
+lavender = "#c4b8e8"
+hearth = "#e8a15a"
+frost = "#5d7590"
+
+[fill]
+symbol = " "
+
+[character]
+success_symbol = "[☾](bold moon)"
+error_symbol = "[☾](bold ember)"
+vimcmd_symbol = "[❄](bold lavender)"
+
+[directory]
+style = "bold fg:black bg:snow"
+format = "[ $path ]($style)[$read_only]($read_only_style)"
+read_only = " 󰌾 "
+read_only_style = "fg:black bg:snow"
+truncation_length = 3
+truncation_symbol = "…/"
+repo_root_style = "bold fg:black bg:snow"
+repo_root_format = "[ $repo_root]($repo_root_style)[$path ]($style)[$read_only]($read_only_style)"
+
+[git_branch]
+symbol = " "
+style = "fg:amber bg:night"
+format = "[ $symbol$branch ]($style)"
+
+[git_status]
+style = "fg:lavender bg:night"
+format = "[($all_status$ahead_behind )]($style)"
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+conflicted = "= "
+untracked = "?${count} "
+modified = "!${count} "
+staged = "+${count} "
+stashed = ""
+renamed = ""
+deleted = "✘${count} "
+
+[python]
+symbol = " "
+style = "fg:pine"
+format = "[$symbol($version )(\\($virtualenv\\) )]($style)"
+
+[nodejs]
+symbol = " "
+style = "fg:pine"
+format = "[$symbol($version )]($style)"
+
+[rust]
+symbol = " "
+style = "fg:hearth"
+format = "[$symbol($version )]($style)"
+
+[cmd_duration]
+min_time = 2000
+style = "fg:frost"
+format = "[took $duration ]($style)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "fg:moon"
+format = "[☾ $time]($style)"

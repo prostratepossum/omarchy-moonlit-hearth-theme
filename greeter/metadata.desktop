@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=Moonlit Hearth
+Description=The Moonlit Hearth lock screen at login: live snow and moonlight, moon-and-cabin badge, warm-lit password field
+Author=prostratepossum
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6

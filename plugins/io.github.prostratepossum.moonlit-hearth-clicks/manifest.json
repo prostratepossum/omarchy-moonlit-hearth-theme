@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.prostratepossum.moonlit-hearth-clicks",
+  "name": "Moonlit Hearth Clicks",
+  "version": "1.0.0",
+  "author": "prostratepossum",
+  "description": "A small snowflake drifts down wherever you click (left drifts left, right drifts right); middle click leaves a faint frost ring. Click-through, skips fullscreen.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Clicks.qml"
+  },
+  "homepage": "https://github.com/prostratepossum/omarchy-moonlit-hearth-theme"
+}

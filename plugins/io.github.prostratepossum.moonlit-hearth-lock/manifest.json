@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.prostratepossum.moonlit-hearth-lock",
+  "name": "Moonlit Hearth Lock Screen",
+  "version": "1.0.0",
+  "author": "prostratepossum",
+  "description": "Omarchy lock screen reskinned as a Moonlit Hearth winter night: live snow and moonlight over the wallpaper, moon-and-cabin badge, glowing clock, warm firelight around the password field and snowflakes on each keystroke.",
+  "omarchy": {
+    "capabilities": [
+      "authentication"
+    ],
+    "clonedFrom": "omarchy.lock"
+  },
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  },
+  "homepage": "https://github.com/prostratepossum/omarchy-moonlit-hearth-theme"
+}

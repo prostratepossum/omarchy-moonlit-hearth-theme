@@ -1,0 +1,36 @@
+# Moonlit Hearth — deep winter night, moonlit snow, one warm cabin window.
+# Accent is moonlight; yellow/orange are hearth amber; red is ember.
+mode = "dark"
+
+accent = "#8fbbe0"
+selection = "#1a2c45"
+muted = "#5d7590"
+
+background = "#0a1424"
+dark_background = "#07101d"
+darker_background = "#040a13"
+lighter_background = "#14243a"
+
+foreground = "#d4e3f0"
+dark_foreground = "#a3b9cc"
+light_foreground = "#e4eef7"
+bright_foreground = "#f2f7fc"
+
+selection_foreground = "#0a1424"
+selection_background = "#8fbbe0"
+
+red = "#d27a6a"
+orange = "#e8a15a"
+yellow = "#f0c47a"
+green = "#8fb9a8"
+cyan = "#7fc4d4"
+blue = "#6f9fd8"
+magenta = "#a99ad8"
+brown = "#8a6248"
+
+bright_red = "#e69a8b"
+bright_yellow = "#f7d9a0"
+bright_green = "#acd1c1"
+bright_cyan = "#a3d8e4"
+bright_blue = "#95bbe8"
+bright_magenta = "#c4b8e8"
