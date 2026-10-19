@@ -2,7 +2,7 @@
 """Synthesise the Moonlit Hearth login chime: a faint winter wind with falling
 snow hiss, a small glassy sleigh-bell shimmer, then one warm low wooden tone
 like a cabin door closing softly. ~4.5 s, stereo WAV, numpy only.
-usage: make-hearth-chime.py [out.wav]  (default: hearth-login.wav next to this script)"""
+usage: make-hearth-chime.py [out.wav]  (default: ../extras/login.wav)"""
 
 import sys
 import wave
@@ -96,7 +96,7 @@ out *= fade
 out *= 0.26 / np.max(np.abs(out))
 
 pcm = (np.clip(out.T, -1, 1) * 32767).astype("<i2")
-dest = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent / "hearth-login.wav"
+dest = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "extras" / "login.wav"
 with wave.open(str(dest), "wb") as wf:
     wf.setnchannels(2)
     wf.setsampwidth(2)

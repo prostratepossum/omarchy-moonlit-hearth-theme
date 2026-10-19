@@ -1,156 +1,174 @@
 #!/bin/bash
 # Moonlit Hearth for Omarchy.
 #
-#   ./install.sh                 theme + cursors + live wallpaper, lock screen, intro, click effects
-#   ./install.sh --all           ...plus terminal rice and login chime
-#   ./install.sh --dotfiles      also install starship, fastfetch, lazygit, eza/fzf colors
-#   ./install.sh --sound         also play the Moonlit Hearth chime at login
-#   ./install.sh --no-plugins    no shell plugins (theme + cursors only)
+#   ./install.sh                 theme + cursors + Living Themes (live wallpaper, lock screen,
+#                                intro, click effects, theme switcher)
+#   ./install.sh --all           ...plus the login chime and the SDDM login screen (sudo)
+#   ./install.sh --sound         also play the theme's chime at login
+#   ./install.sh --greeter       also install the SDDM login screen (asks for sudo)
+#   ./install.sh --yes           remove the old 1.x plugins without asking
+#   ./install.sh --no-plugins    theme, cursors and theme switcher only (no shell plugins)
 #   ./install.sh --no-cursors    keep your current mouse cursor
-#   ./install.sh --uninstall     restore the stock Omarchy plugins and remove extras
+#   ./install.sh --uninstall     remove this theme (switch to another theme first)
 #
-# Boot splash and login screen are separate (both need sudo):
-#   ~/.config/omarchy/themes/moonlit-hearth/plymouth-hearth/install.sh
-#   ./greeter/install.sh
+# --dotfiles is gone: the prompt, fastfetch, lazygit and eza/fzf colors now
+# switch with the theme (see extras/). It's still accepted and does nothing.
+#
+# Boot splash (needs sudo, rebuilds the initramfs): run `living-themes boot`,
+# or use the notification Omarchy shows after switching to this theme.
 set -euo pipefail
 
+THEME=moonlit-hearth
+TITLE="Moonlit Hearth"
+MARK="❄"
+CURSOR=MoonlitHearth
+WALLPAPER=0-moonlithearth-hearth.jpg
+SPLASH=plymouth-hearth
+THEME_FILES=(colors.toml btop.theme icons.theme hyprland.lua chromium.theme preview.png unlock.png backgrounds plymouth plymouth-hearth extras)
+OLD_BLOCK=moonlit-hearth            # 1.x marker blocks in ~/.bashrc and looknfeel.lua
+OLD_UNIT=moonlit-hearth-login-sound.service
+OLD_LOGO=moonlit-hearth.txt         # 1.x fastfetch logo copied into ~/.config/fastfetch
+
+# Shared plugins and theme switcher: https://github.com/prostratepossum/omarchy-living-themes
+LIVING_URL=https://github.com/prostratepossum/omarchy-living-themes.git
+LIVING_REF=v1.0.0
+
 SRC="$(cd "$(dirname "$0")" && pwd)"
-THEME_DIR="$HOME/.config/omarchy/themes/moonlit-hearth"
-PLUGINS_DIR="$HOME/.config/omarchy/plugins"
-STAMP=$(date +%s)
-PLUGINS=(io.github.prostratepossum.moonlit-hearth-background io.github.prostratepossum.moonlit-hearth-lock io.github.prostratepossum.moonlit-hearth-intro io.github.prostratepossum.moonlit-hearth-clicks)
-CURSOR_DIR="$HOME/.local/share/icons/MoonlitHearth"
+THEME_DIR="$HOME/.config/omarchy/themes/$THEME"
+CURSOR_DIR="$HOME/.local/share/icons/$CURSOR"
+LIVING_DIR="$HOME/.local/share/omarchy-living-themes"
 LOOKNFEEL="$HOME/.config/hypr/looknfeel.lua"
 
-plugins=1 cursors=1 dotfiles=0 sound=0 uninstall=0
+cursors=1 uninstall=0 living_args=()
 for arg in "$@"; do
   case "$arg" in
-  --all) dotfiles=1 sound=1 ;;
-  --dotfiles) dotfiles=1 ;;
-  --sound) sound=1 ;;
-  --no-plugins) plugins=0 ;;
+  --all) living_args+=(--sound --greeter) ;;
+  --sound | --greeter | --yes | --no-plugins) living_args+=("$arg") ;;
+  -y) living_args+=(--yes) ;;
+  --dotfiles) echo "note: --dotfiles is no longer needed; the terminal rice switches with the theme" ;;
   --no-cursors) cursors=0 ;;
   --uninstall) uninstall=1 ;;
-  -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  -h | --help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
   *) echo "unknown option: $arg" >&2; exit 1 ;;
   esac
 done
 
 command -v omarchy >/dev/null || { echo "This needs Omarchy (https://omarchy.org)." >&2; exit 1; }
 
-# Copy a file into place, keeping a timestamped backup of anything it replaces.
-place() {
-  local from="$1" to="$2"
-  mkdir -p "$(dirname "$to")"
-  if [[ -e $to ]] && ! cmp -s "$from" "$to"; then
-    cp -a "$to" "$to.bak.$STAMP"
-    echo "  backed up $to -> $to.bak.$STAMP"
+# Where the shared part lives: a checkout next to this repo (development), or
+# a pinned clone in ~/.local/share.
+living_src() {
+  if [[ -x $SRC/../omarchy-living-themes/install.sh ]]; then
+    (cd "$SRC/../omarchy-living-themes" && pwd)
+  else
+    echo "$LIVING_DIR"
   fi
-  cp "$from" "$to"
 }
 
 if (( uninstall )); then
-  for id in "${PLUGINS[@]}"; do omarchy plugin remove "$id" --yes 2>/dev/null || true; done
-  omarchy plugin enable omarchy.background >/dev/null 2>&1 || true
-  omarchy plugin enable omarchy.lock >/dev/null 2>&1 || true
-  systemctl --user disable --now moonlit-hearth-login-sound.service 2>/dev/null || true
-  rm -f "$HOME/.config/systemd/user/moonlit-hearth-login-sound.service"
-  sed -i '/# >>> moonlit-hearth >>>/,/# <<< moonlit-hearth <<</d' "$HOME/.bashrc" 2>/dev/null || true
-  if grep -q -- '-- >>> moonlit-hearth cursor >>>' "$LOOKNFEEL" 2>/dev/null; then
-    sed -i '/-- >>> moonlit-hearth cursor >>>/,/-- <<< moonlit-hearth cursor <<</d' "$LOOKNFEEL"
-    gsettings reset org.gnome.desktop.interface cursor-theme 2>/dev/null || true
-    hyprctl setcursor Adwaita "${XCURSOR_SIZE:-24}" >/dev/null 2>&1 || true
+  if [[ $(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null) == "$THEME" ]]; then
+    echo "$TITLE is the active theme. Switch first (omarchy theme set <name>), then run --uninstall again." >&2
+    exit 1
   fi
+  [[ $SRC -ef $THEME_DIR ]] || rm -rf "$THEME_DIR"
   rm -rf "$CURSOR_DIR"
-  echo "Removed the Moonlit Hearth plugins, cursors, login chime and shell colors."
-  echo "Pick another theme with: omarchy theme set <name>"
-  echo "Dotfiles you replaced are next to their originals as *.bak.<timestamp>."
+  echo "Removed the $TITLE theme and its cursors."
+  if [[ $SRC -ef $THEME_DIR ]]; then
+    echo "This clone is the installed theme folder; delete it yourself: rm -rf $THEME_DIR"
+  fi
+  echo "Living Themes (the shared plugins and theme switcher) is still installed, since"
+  if [[ $(living_src) == "$LIVING_DIR" ]]; then
+    echo "other themes can use it. To remove it too: $LIVING_DIR/install.sh --uninstall && rm -rf $LIVING_DIR"
+  else
+    echo "other themes can use it. To remove it too: $(living_src)/install.sh --uninstall"
+  fi
   exit 0
 fi
 
-echo "❄ Installing the Moonlit Hearth theme"
+# 1.x put the rice in place with --dotfiles and its own marker blocks. Take
+# those back out so the theme switcher starts clean, and put the files they
+# replaced back where they were.
+restore_old() {
+  local target=$1 ours=$2 bak
+  [[ -f $target && ! -L $target ]] || return 0
+  cmp -s "$target" "$ours" || return 0
+  bak=$(ls -t "$target".bak.* 2>/dev/null | head -1 || true)
+  if [[ -n $bak ]]; then
+    mv "$bak" "$target"
+    echo "  restored your $target from $(basename "$bak")"
+  else
+    rm -f "$target"
+  fi
+}
+
+migrate_1x() {
+  local found=0
+  if grep -q "# >>> $OLD_BLOCK >>>" "$HOME/.bashrc" 2>/dev/null; then
+    sed -i "/# >>> $OLD_BLOCK >>>/,/# <<< $OLD_BLOCK <<</d" "$HOME/.bashrc"; found=1
+  fi
+  if grep -q -- "-- >>> $OLD_BLOCK cursor >>>" "$LOOKNFEEL" 2>/dev/null; then
+    sed -i "/-- >>> $OLD_BLOCK cursor >>>/,/-- <<< $OLD_BLOCK cursor <<</d" "$LOOKNFEEL"; found=1
+  fi
+  if [[ -f $HOME/.config/systemd/user/$OLD_UNIT ]]; then
+    systemctl --user disable "$OLD_UNIT" >/dev/null 2>&1 || true
+    rm -f "$HOME/.config/systemd/user/$OLD_UNIT"; found=1
+  fi
+  restore_old "$HOME/.config/starship.toml" "$SRC/extras/starship.toml"
+  restore_old "$HOME/.config/lazygit/config.yml" "$SRC/extras/lazygit.yml"
+  if grep -q "$OLD_LOGO" "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null && [[ ! -L $HOME/.config/fastfetch/config.jsonc ]]; then
+    local bak
+    bak=$(ls -t "$HOME/.config/fastfetch/config.jsonc".bak.* 2>/dev/null | head -1 || true)
+    if [[ -n $bak ]]; then mv "$bak" "$HOME/.config/fastfetch/config.jsonc"; else rm -f "$HOME/.config/fastfetch/config.jsonc"; fi
+    found=1
+  fi
+  rm -f "$HOME/.config/fastfetch/$OLD_LOGO"
+  if (( found )); then echo "  cleaned up the 1.x shell colors, cursor line and login chime"; fi
+  # The 1.0 login screen had its own SDDM theme; its config would win over the shared one.
+  if [[ -e /etc/sddm.conf.d/zz-moonlit-hearth.conf || -d /usr/share/sddm/themes/moonlit-hearth ]]; then
+    echo "  the 1.0 login screen is still installed and would override the new one; remove it with:"
+    echo "    sudo rm -rf /usr/share/sddm/themes/moonlit-hearth /etc/sddm.conf.d/zz-moonlit-hearth.conf"
+  fi
+  return 0
+}
+
+echo "$MARK Installing the $TITLE theme"
+migrate_1x
 mkdir -p "$THEME_DIR"
 # Skip the copy when run from a clone made by `omarchy theme install`.
-[[ $SRC -ef $THEME_DIR ]] || cp -a "$SRC"/{colors.toml,btop.theme,icons.theme,hyprland.lua,chromium.theme,preview.png,unlock.png,backgrounds,plymouth,plymouth-hearth,sounds} "$THEME_DIR/"
-omarchy theme set moonlit-hearth
-# theme set may pick a random wallpaper; start on the cabin under the moon.
-omarchy theme bg set "$THEME_DIR/backgrounds/0-moonlithearth-hearth.jpg" >/dev/null 2>&1 || true
-
-if (( plugins )); then
-  echo "❄ Installing the Moonlit Hearth shell plugins (live wallpaper, lock screen, intro, click effects)"
-  mkdir -p "$PLUGINS_DIR"
-  for id in "${PLUGINS[@]}"; do
-    if [[ -d $PLUGINS_DIR/$id ]]; then
-      mv "$PLUGINS_DIR/$id" "$PLUGINS_DIR/.$id.bak.$STAMP"
-      echo "  backed up existing $id -> .$id.bak.$STAMP"
-    fi
-    cp -a "$SRC/plugins/$id" "$PLUGINS_DIR/$id"
-  done
-  # Enabling the background and lock forks switches off the stock ones
-  # (they declare clonedFrom), and removing them brings the stock ones back.
-  for id in "${PLUGINS[@]}"; do omarchy plugin enable "$id" >/dev/null; done
-  omarchy-restart-shell >/dev/null 2>&1 || true
-
-  # The Starwatch intro and click plugins answer to the same IPC names.
-  for other in io.github.prostratepossum.starwatch-intro io.github.prostratepossum.starwatch-clicks; do
-    if [[ -d $PLUGINS_DIR/$other ]]; then
-      echo "  $other is also installed; disable one of them (omarchy plugin disable $other)"
-    fi
-  done
-
-  # The click effects read mouse buttons through evdev.
-  if ! /usr/bin/python3 -c 'import evdev' 2>/dev/null; then
-    echo "  click effects need python-evdev:  sudo pacman -S python-evdev"
-  fi
-  if ! id -nG | grep -qw input; then
-    echo "  click effects need the input group:  sudo usermod -aG input \$USER  (then log out and back in)"
-  fi
+if ! [[ $SRC -ef $THEME_DIR ]]; then
+  for f in "${THEME_FILES[@]}"; do rm -rf "${THEME_DIR:?}/$f"; cp -a "$SRC/$f" "$THEME_DIR/"; done
 fi
 
 if (( cursors )); then
-  echo "❄ Installing the Moonlit Hearth cursors"
+  echo "$MARK Installing the $CURSOR cursors"
   rm -rf "$CURSOR_DIR"
   mkdir -p "$(dirname "$CURSOR_DIR")"
-  cp -a "$SRC/cursors/MoonlitHearth" "$CURSOR_DIR"
-  if [[ -f $LOOKNFEEL ]] && ! grep -q -- '-- >>> moonlit-hearth cursor >>>' "$LOOKNFEEL"; then
-    cp -a "$LOOKNFEEL" "$LOOKNFEEL.bak.$STAMP"
-    printf '\n-- >>> moonlit-hearth cursor >>>\nhl.env("XCURSOR_THEME", "MoonlitHearth")\n-- <<< moonlit-hearth cursor <<<\n' >> "$LOOKNFEEL"
-    echo "  set XCURSOR_THEME in $LOOKNFEEL (backup: $LOOKNFEEL.bak.$STAMP)"
-  fi
-  gsettings set org.gnome.desktop.interface cursor-theme MoonlitHearth 2>/dev/null || true
-  hyprctl setcursor MoonlitHearth "${XCURSOR_SIZE:-24}" >/dev/null 2>&1 || true
+  cp -a "$SRC/cursors/$CURSOR" "$CURSOR_DIR"
 fi
 
-if (( dotfiles )); then
-  echo "❄ Installing the terminal rice"
-  place "$SRC/extras/starship.toml" "$HOME/.config/starship.toml"
-  place "$SRC/extras/fastfetch/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
-  place "$SRC/extras/fastfetch/moonlit-hearth.txt" "$HOME/.config/fastfetch/moonlit-hearth.txt"
-  place "$SRC/extras/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-  if ! grep -q '# >>> moonlit-hearth >>>' "$HOME/.bashrc" 2>/dev/null; then
-    { echo; echo '# >>> moonlit-hearth >>>'; cat "$SRC/extras/bash/moonlit-hearth.sh"; echo '# <<< moonlit-hearth <<<'; } >> "$HOME/.bashrc"
-    echo "  added eza/fzf colors to ~/.bashrc"
+echo "$MARK Getting Living Themes ($LIVING_REF)"
+LIVING=$(living_src)
+if [[ $LIVING == "$LIVING_DIR" ]]; then
+  if [[ -d $LIVING_DIR/.git ]]; then
+    git -C "$LIVING_DIR" fetch -q --depth 1 origin tag "$LIVING_REF"
+    git -C "$LIVING_DIR" checkout -q "$LIVING_REF"
+  else
+    rm -rf "$LIVING_DIR"
+    git clone -q --depth 1 --branch "$LIVING_REF" "$LIVING_URL" "$LIVING_DIR"
   fi
-  btop_conf="$HOME/.config/btop/btop.conf"
-  [[ -f $btop_conf ]] && sed -i 's/^theme_background = .*/theme_background = false/' "$btop_conf"
+else
+  echo "  using the checkout at $LIVING"
 fi
+"$LIVING/install.sh" "${living_args[@]}"
 
-if (( sound )); then
-  echo "❄ Enabling the login chime"
-  place "$SRC/extras/systemd/moonlit-hearth-login-sound.service" "$HOME/.config/systemd/user/moonlit-hearth-login-sound.service"
-  systemctl --user daemon-reload
-  systemctl --user enable moonlit-hearth-login-sound.service
-fi
+echo "$MARK Switching to $TITLE"
+omarchy theme set "$THEME"
+# theme set may pick a random wallpaper; the animated one is the default.
+omarchy theme bg set "$THEME_DIR/backgrounds/$WALLPAPER" >/dev/null 2>&1 || true
+"$HOME/.local/bin/living-themes" greeter >/dev/null 2>&1 || true
 
 cat <<DONE
 
-❄ Done. Try:
-  omarchy-shell -q intro play                  replay the login intro
-  omarchy-shell lock previewInteractive        preview the lock screen (closes after 90s)
-  omarchy-shell -q background toggleAnimation  pause/resume the live wallpaper
-  omarchy-shell -q clicks toggle               turn the click effects on/off
-
-Optional (sudo; each has --revert):
-  $THEME_DIR/plymouth-hearth/install.sh      animated boot splash (rebuilds initramfs)
-  $SRC/greeter/install.sh                    SDDM login screen
+$MARK Done. Switching to another theme and back swaps the scene, cursor, prompt and login screen.
+  living-themes boot      animated boot splash (sudo; $THEME_DIR/$SPLASH/install.sh --revert undoes it)
 DONE

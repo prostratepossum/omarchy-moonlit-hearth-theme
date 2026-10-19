@@ -22,11 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ---
-Artwork (backgrounds/, badges, plymouth images, previews/, sounds/*.wav):
+Artwork (backgrounds/, badges, plymouth images, previews/, extras/login.wav):
 free for personal use. Not for resale or redistribution in other products
 without permission. The wallpapers were generated with FLUX.1 [schnell]
 (Apache-2.0) from original prompts.
-
-Cormorant Garamond (plugins/*/fonts/, greeter/assets/) is by the Cormorant Project Authors
-and is licensed under the SIL Open Font License 1.1; see the OFL.txt next to
-each copy.
